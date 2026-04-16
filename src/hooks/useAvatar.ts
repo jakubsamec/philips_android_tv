@@ -20,7 +20,6 @@ export function useAvatar() {
         let avatarId = localStorage.getItem(LS_AVATAR_ID)
         let displayName = localStorage.getItem(LS_AVATAR_NAME)
         let backupKey = localStorage.getItem(LS_BACKUP_KEY)
-        const jeNovy = !avatarId
 
         if (!avatarId) {
           avatarId = generujUUID()
