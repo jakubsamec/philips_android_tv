@@ -19,14 +19,13 @@ function GameContent() {
   const { setBoss, setActiveEvents, setCurrentSeason } = useGameStore()
   const season = useGameStore(s => s.currentSeason)
 
-  // Inicializuj avatara (anonymní identita)
   useAvatar()
 
-  // Načti boss stav při startu
   useEffect(() => {
     fetch('/api/boss')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : null)
       .then(data => {
+        if (!data) return
         if (data.boss) {
           setBoss({
             id: data.boss.id,
@@ -66,64 +65,84 @@ function GameContent() {
           })
         }
       })
-      .catch(() => {}) // Tiché selhání — Supabase nemusí být nakonfigurována
+      .catch(() => {})
   }, [setBoss, setActiveEvents, setCurrentSeason])
 
-  // Realtime subscriptions
   useBossRealtime(season?.id)
   useFeedRealtime(season?.id)
 
   return (
-    <div className="min-h-screen bg-[#05050f]">
-      {/* Boss Interrupt overlay */}
+    <div className="min-h-screen" style={{ background: '#05050f' }}>
       <BossInterrupt />
 
       {/* Header */}
-      <header className="border-b border-gray-900 px-4 py-3 flex items-center justify-between sticky top-0 bg-[#05050f]/95 backdrop-blur-sm z-40">
-        <div className="flex items-center gap-3">
+      <header style={{
+        borderBottom: '1px solid #1a1a2e',
+        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        background: 'rgba(5,5,15,0.97)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 40,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <GlitchText
             as="h1"
             intensity="low"
-            className="text-red-400 font-bold text-base font-mono uppercase tracking-widest"
+            className="text-red-400 font-bold text-lg font-mono uppercase tracking-widest"
           >
             Přežij Monetu
           </GlitchText>
-          <span className="text-[10px] text-gray-700 font-mono hidden sm:inline">
-            corporate survival game
+          <span style={{ fontSize: 10, color: '#374151', fontFamily: 'monospace' }}>
+            corporate survival game · sezóna I
           </span>
         </div>
-        <div className="text-[10px] text-gray-800 font-mono">
+        <div style={{ fontSize: 10, color: '#1f2937', fontFamily: 'monospace' }}>
           anonymous · no tracking · no data
         </div>
       </header>
 
-      {/* Hlavní grid */}
-      <main className="max-w-7xl mx-auto px-3 py-4">
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_320px] gap-4">
-
-          {/* LEVÝ SLOUPEC: Boss + Leaderboard */}
-          <div className="space-y-4 order-2 lg:order-1">
+      {/* Grid */}
+      <main style={{ maxWidth: 1400, margin: '0 auto', padding: '16px 12px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(1, 1fr)',
+          gap: 16,
+        }}
+          className="lg:grid-cols-[300px_1fr_340px]"
+        >
+          {/* LEVÝ: Boss + Leaderboard */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+            className="order-2 lg:order-1">
             <BossPanel />
             <Leaderboard />
           </div>
 
-          {/* STŘEDNÍ SLOUPEC: Avatar + Check-in/Report */}
-          <div className="space-y-4 order-1 lg:order-2">
+          {/* STŘED: Avatar + Check-in */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+            className="order-1 lg:order-2">
             <AvatarPanel />
             <DailyReport />
             <DailyInput />
           </div>
 
-          {/* PRAVÝ SLOUPEC: Feed */}
+          {/* PRAVÝ: Feed */}
           <div className="order-3">
             <Feed />
           </div>
         </div>
       </main>
 
-      {/* Footer — minimální, bez trackerů */}
-      <footer className="border-t border-gray-900 px-4 py-3 mt-8 text-center">
-        <p className="text-[10px] text-gray-800 font-mono">
+      <footer style={{
+        borderTop: '1px solid #0f0f1a',
+        padding: '12px 16px',
+        marginTop: 32,
+        textAlign: 'center',
+      }}>
+        <p style={{ fontSize: 10, color: '#111827', fontFamily: 'monospace' }}>
           Přežij Monetu · anonymní · žádná data · žádné cookies · {new Date().getFullYear()}
         </p>
       </footer>

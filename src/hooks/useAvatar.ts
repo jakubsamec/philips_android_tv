@@ -17,74 +17,63 @@ export function useAvatar() {
       try {
         setLoading(true)
 
-        // Načti nebo vytvoř anonymní identitu z localStorage
         let avatarId = localStorage.getItem(LS_AVATAR_ID)
         let displayName = localStorage.getItem(LS_AVATAR_NAME)
         let backupKey = localStorage.getItem(LS_BACKUP_KEY)
-
         const jeNovy = !avatarId
 
         if (!avatarId) {
           avatarId = generujUUID()
           displayName = generujJmeno()
           backupKey = await generujBackupKey(avatarId)
-
           localStorage.setItem(LS_AVATAR_ID, avatarId)
           localStorage.setItem(LS_AVATAR_NAME, displayName)
           localStorage.setItem(LS_BACKUP_KEY, backupKey)
         }
 
-        // Zkus načíst data z DB
-        const response = await fetch(`/api/avatar/${avatarId}`)
+        const dnesni = new Date().toISOString().slice(0, 10)
+        const posledniCheckin = localStorage.getItem(LS_CHECKIN_DATUM)
 
-        let avatarData: Avatar
+        // Zkus načíst z DB (s timeoutem 5s)
+        let avatarData: Avatar | null = null
 
-        if (response.ok) {
-          const dbData = await response.json()
-          const { level, xpToNext } = levelZXP(dbData.xp)
-          const dnesni = new Date().toISOString().slice(0, 10)
-          const posledniCheckin = localStorage.getItem(LS_CHECKIN_DATUM)
+        try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 5000)
+          const response = await fetch(`/api/avatar/${avatarId}`, { signal: controller.signal })
+          clearTimeout(timeout)
 
-          avatarData = {
-            id: avatarId,
-            displayName: displayName || dbData.display_name,
-            level,
-            xp: dbData.xp,
-            xpToNext,
-            stats: {
-              morale:      dbData.morale,
-              energy:      dbData.energy,
-              burnout:     dbData.burnout,
-              flex:        dbData.flex,
-              overtimeMins: dbData.overtime_mins,
-              loyalty:     dbData.loyalty,
-            },
-            influenceScore: dbData.influence_score,
-            unlockedAbilities: dbData.unlocked_abilities || [],
-            hasDoneCheckinToday: posledniCheckin === dnesni,
-            lastCheckinDate: posledniCheckin,
-            backupKey: backupKey || '',
-            createdAt: dbData.created_at,
-          }
-        } else if (jeNovy) {
-          // Vytvoř nový záznam v DB
-          const createRes = await fetch('/api/avatar/create', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Avatar-Id': avatarId,
-            },
-            body: JSON.stringify({
+          if (response.ok) {
+            const dbData = await response.json()
+            const { level, xpToNext } = levelZXP(dbData.xp || 0)
+            avatarData = {
               id: avatarId,
-              display_name: displayName,
-              backup_key: backupKey,
-            }),
-          })
-
-          if (!createRes.ok) {
-            throw new Error('Nepodařilo se vytvořit avatara')
+              displayName: displayName || dbData.display_name,
+              level,
+              xp: dbData.xp || 0,
+              xpToNext,
+              stats: {
+                morale:      dbData.morale      ?? 70,
+                energy:      dbData.energy      ?? 80,
+                burnout:     dbData.burnout     ?? 10,
+                flex:        dbData.flex        ?? 0,
+                overtimeMins: dbData.overtime_mins ?? 0,
+                loyalty:     dbData.loyalty     ?? 50,
+              },
+              influenceScore: dbData.influence_score || 0,
+              unlockedAbilities: dbData.unlocked_abilities || [],
+              hasDoneCheckinToday: posledniCheckin === dnesni,
+              lastCheckinDate: posledniCheckin,
+              backupKey: backupKey || '',
+              createdAt: dbData.created_at || new Date().toISOString(),
+            }
           }
+        } catch {
+          // DB nedostupná — pokračuj bez ní
+        }
 
+        // Pokud DB selhal, vytvoř lokální avatar
+        if (!avatarData) {
           const { level, xpToNext } = levelZXP(0)
           avatarData = {
             id: avatarId,
@@ -92,24 +81,39 @@ export function useAvatar() {
             level,
             xp: 0,
             xpToNext,
-            stats: {
-              morale: 70, energy: 80, burnout: 10,
-              flex: 0, overtimeMins: 0, loyalty: 50,
-            },
+            stats: { morale: 70, energy: 80, burnout: 10, flex: 0, overtimeMins: 0, loyalty: 50 },
             influenceScore: 0,
             unlockedAbilities: [],
-            hasDoneCheckinToday: false,
-            lastCheckinDate: null,
+            hasDoneCheckinToday: posledniCheckin === dnesni,
+            lastCheckinDate: posledniCheckin,
             backupKey: backupKey!,
             createdAt: new Date().toISOString(),
           }
-        } else {
-          throw new Error('Avatar nenalezen')
+
+          // Pokus o uložení do DB (async, neblokuj UI)
+          if (jeNovy) {
+            fetch('/api/avatar/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Avatar-Id': avatarId },
+              body: JSON.stringify({ id: avatarId, display_name: displayName, backup_key: backupKey }),
+            }).catch(() => {}) // Tiché selhání
+          }
         }
 
         setAvatar(avatarData)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Chyba načítání')
+        // I při chybě vytvoř fallback avatar
+        setAvatar({
+          id: 'local-' + Math.random().toString(36).slice(2),
+          displayName: generujJmeno(),
+          level: 1, xp: 0, xpToNext: 100,
+          stats: { morale: 70, energy: 80, burnout: 10, flex: 0, overtimeMins: 0, loyalty: 50 },
+          influenceScore: 0, unlockedAbilities: [],
+          hasDoneCheckinToday: false, lastCheckinDate: null,
+          backupKey: 'LOKALNI-REZIM',
+          createdAt: new Date().toISOString(),
+        })
       } finally {
         setLoading(false)
       }
