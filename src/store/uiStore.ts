@@ -9,6 +9,7 @@ interface UIStore {
   isDailyReportVisible: boolean
   lastDailyReport: DenniReport | null
   isCheckinInProgress: boolean
+  isHelpOpen: boolean
 
   triggerBossInterrupt: (event: BossEvent) => void
   dismissInterrupt: () => void
@@ -17,6 +18,8 @@ interface UIStore {
   showDailyReport: (report: DenniReport) => void
   hideDailyReport: () => void
   setCheckinInProgress: (v: boolean) => void
+  openHelp: () => void
+  closeHelp: () => void
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -26,6 +29,7 @@ export const useUIStore = create<UIStore>((set) => ({
   isDailyReportVisible: false,
   lastDailyReport: null,
   isCheckinInProgress: false,
+  isHelpOpen: false,
 
   triggerBossInterrupt: (event) => set({
     isBossInterruptActive: true,
@@ -43,4 +47,6 @@ export const useUIStore = create<UIStore>((set) => ({
   }),
   hideDailyReport: () => set({ isDailyReportVisible: false }),
   setCheckinInProgress: (v) => set({ isCheckinInProgress: v }),
+  openHelp: () => set({ isHelpOpen: true }),
+  closeHelp: () => set({ isHelpOpen: false }),
 }))

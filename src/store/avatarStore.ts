@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { Avatar, StatDelta } from '@/types/avatar'
 import { LS_CHECKIN_DATUM } from '@/lib/constants'
+import { levelZXP } from '@/lib/game/xp'
 
 interface AvatarStore {
   avatar: Avatar | null
@@ -54,8 +55,10 @@ export const useAvatarStore = create<AvatarStore>((set) => ({
 
   addXP: (amount) => set((state) => {
     if (!state.avatar) return state
+    const novéXP = state.avatar.xp + amount
+    const { level, xpToNext } = levelZXP(novéXP)
     return {
-      avatar: { ...state.avatar, xp: state.avatar.xp + amount },
+      avatar: { ...state.avatar, xp: novéXP, level, xpToNext },
     }
   }),
 

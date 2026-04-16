@@ -14,10 +14,13 @@ import { DailyReport } from '@/components/daily/DailyReport'
 import { Feed } from '@/components/feed/Feed'
 import { Leaderboard } from '@/components/leaderboard/Leaderboard'
 import { GlitchText } from '@/components/ui/GlitchText'
+import { HelpModal } from '@/components/ui/HelpModal'
+import { useUIStore } from '@/store/uiStore'
 
 function GameContent() {
   const { setBoss, setActiveEvents, setCurrentSeason } = useGameStore()
   const season = useGameStore(s => s.currentSeason)
+  const openHelp = useUIStore(s => s.openHelp)
 
   useAvatar()
 
@@ -74,6 +77,7 @@ function GameContent() {
   return (
     <div className="min-h-screen" style={{ background: '#05050f' }}>
       <BossInterrupt />
+      <HelpModal />
 
       {/* Header */}
       <header style={{
@@ -100,8 +104,20 @@ function GameContent() {
             corporate survival game · sezóna I
           </span>
         </div>
-        <div style={{ fontSize: 10, color: '#1f2937', fontFamily: 'monospace' }}>
-          anonymous · no tracking · no data
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            onClick={openHelp}
+            style={{
+              fontFamily: 'monospace', fontSize: 10, color: '#4b5563',
+              background: 'none', border: '1px solid #1f2937', borderRadius: 2,
+              padding: '2px 8px', cursor: 'pointer', letterSpacing: '0.05em',
+            }}
+          >
+            ? nápověda
+          </button>
+          <span style={{ fontSize: 10, color: '#1f2937', fontFamily: 'monospace' }}>
+            anonymous · no tracking · no data
+          </span>
         </div>
       </header>
 
