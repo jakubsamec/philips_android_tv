@@ -91,13 +91,12 @@ export function useAvatar() {
           }
 
           // Pokus o uložení do DB (async, neblokuj UI)
-          if (jeNovy) {
-            fetch('/api/avatar/create', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-Avatar-Id': avatarId },
-              body: JSON.stringify({ id: avatarId, display_name: displayName, backup_key: backupKey }),
-            }).catch(() => {}) // Tiché selhání
-          }
+          // Vždy zkusíme — endpoint řeší duplicity přes ON CONFLICT
+          fetch('/api/avatar/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Avatar-Id': avatarId },
+            body: JSON.stringify({ id: avatarId, display_name: displayName, backup_key: backupKey }),
+          }).catch(() => {}) // Tiché selhání
         }
 
         setAvatar(avatarData)

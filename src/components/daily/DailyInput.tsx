@@ -16,6 +16,19 @@ export function DailyInput() {
 
   const [officeDays, setOfficeDays] = useState(2)
   const [hoDays, setHoDays] = useState(3)
+  const MAX_DAYS = 5
+
+  const setOfficeDay = (val: number) => {
+    const clamped = Math.max(0, Math.min(MAX_DAYS, val))
+    setOfficeDays(clamped)
+    // Pokud součet překračuje 5, snižuj HO dny
+    if (clamped + hoDays > MAX_DAYS) setHoDays(MAX_DAYS - clamped)
+  }
+  const setHoDay = (val: number) => {
+    const clamped = Math.max(0, Math.min(MAX_DAYS, val))
+    setHoDays(clamped)
+    if (officeDays + clamped > MAX_DAYS) setOfficeDays(MAX_DAYS - clamped)
+  }
   const [overtime, setOvertime] = useState(0)
   const [rating, setRating] = useState<HodnoceniDne | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -98,6 +111,7 @@ export function DailyInput() {
       <div className="space-y-4 pt-2">
 
         {/* Kancelář vs HO */}
+        <div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-mono text-gray-500 uppercase tracking-wider block mb-1">
@@ -105,14 +119,14 @@ export function DailyInput() {
             </label>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setOfficeDays(Math.max(0, officeDays - 1))}
+                onClick={() => setOfficeDay(officeDays - 1)}
                 className="w-7 h-7 rounded border border-gray-700 text-gray-400 hover:border-gray-500 font-mono text-sm"
               >−</button>
               <span className="text-sm font-mono font-bold text-cyan-300 w-4 text-center tabular-nums">
                 {officeDays}
               </span>
               <button
-                onClick={() => setOfficeDays(Math.min(5, officeDays + 1))}
+                onClick={() => setOfficeDay(officeDays + 1)}
                 className="w-7 h-7 rounded border border-gray-700 text-gray-400 hover:border-gray-500 font-mono text-sm"
               >+</button>
             </div>
@@ -124,18 +138,22 @@ export function DailyInput() {
             </label>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setHoDays(Math.max(0, hoDays - 1))}
+                onClick={() => setHoDay(hoDays - 1)}
                 className="w-7 h-7 rounded border border-gray-700 text-gray-400 hover:border-gray-500 font-mono text-sm"
               >−</button>
               <span className="text-sm font-mono font-bold text-cyan-300 w-4 text-center tabular-nums">
                 {hoDays}
               </span>
               <button
-                onClick={() => setHoDays(Math.min(5, hoDays + 1))}
+                onClick={() => setHoDay(hoDays + 1)}
                 className="w-7 h-7 rounded border border-gray-700 text-gray-400 hover:border-gray-500 font-mono text-sm"
               >+</button>
             </div>
           </div>
+        </div>
+        <div className="text-[10px] font-mono text-gray-600 mt-1">
+          {officeDays + hoDays} / 5 dní týdně · součet nelze překročit
+        </div>
         </div>
 
         {/* Přesčas */}
